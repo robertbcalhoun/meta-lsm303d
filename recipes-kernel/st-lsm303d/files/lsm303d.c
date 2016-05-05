@@ -3358,7 +3358,8 @@ exit_check_functionality_failed:
 	return err;
 }
 
-static int __devexit lsm303d_remove(struct i2c_client *client)
+
+static lsm303d_remove(struct i2c_client *client)
 {
 	struct lsm303d_status *stat = i2c_get_clientdata(client);
 
@@ -3405,6 +3406,7 @@ static int __devexit lsm303d_remove(struct i2c_client *client)
 	return 0;
 }
 
+
 static const struct i2c_device_id lsm303d_id[] 
 					= { { LSM303D_DEV_NAME, 0 }, { }, };
 
@@ -3416,7 +3418,7 @@ static struct i2c_driver lsm303d_driver = {
 			.name = LSM303D_DEV_NAME,
 		  },
 	.probe = lsm303d_probe,
-	.remove = __devexit_p(lsm303d_remove),
+	.remove = lsm303d_remove,
 	.id_table = lsm303d_id,
 };
 
