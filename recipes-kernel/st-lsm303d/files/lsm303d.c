@@ -56,6 +56,8 @@ Revision 1-0-5 2013/10/23
 #include <linux/irq.h>
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
 
 #include <linux/input/lsm303d.h>
 /* #include "lsm303d.h" */
@@ -3412,10 +3414,20 @@ static const struct i2c_device_id lsm303d_id[]
 
 MODULE_DEVICE_TABLE(i2c, lsm303d_id);
 
+#ifdef CONFIG_OF
+static const struct of_device_id lsm303d_of_match[] = {
+  {.compatible = "st,lsm303d",},
+  {},
+};
+
+MODULE_DEVICE_TABLE(of,lsm303d_of_match);
+#endif
+
 static struct i2c_driver lsm303d_driver = {
 	.driver = {
 			.owner = THIS_MODULE,
 			.name = LSM303D_DEV_NAME,
+			.of_match_table = lsm303d_of_match,
 		  },
 	.probe = lsm303d_probe,
 	.remove = lsm303d_remove,
