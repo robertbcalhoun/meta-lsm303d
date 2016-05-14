@@ -59,8 +59,8 @@ Revision 1-0-5 2013/10/23
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 
-#include <linux/input/lsm303d.h>
-/* #include "lsm303d.h" */
+/*#include <linux/input/lsm303d.h>*/
+#include "lsm303d.h"
 
 
 #define	I2C_AUTO_INCREMENT	(0x80)
