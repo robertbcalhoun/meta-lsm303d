@@ -1,118 +1,101 @@
-This README file contains information on building the meta-scepter2
-BSP layer, and booting the images contained in the /binary directory.
-Please see the corresponding sections below for details.
+lsm303d driver and bitbake layer
+Layer (c) 2016 by Robert B Calhoun, Shotspotter Inc rcalhoun@gmail.com
+
+License
+=======
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+
+
+This README file contains information on building the a driver for the
+ST Micro lsm303d accelerometer / magnetometer as an out-of-tree build
+under the yocto build system. It includes both the recipe for building
+the kernel module and the source code for the driver itself. The source 
+code is derived from the driver on ST's web site, which doesn't compile 
+for modern linux.
+
+I've tested this one on linux 4.4 and linux mainline (currently 4.6).
 
 
 Dependencies
 ============
 
-This layer depends on:
+This layer depends on having the yocto build system installed. Install
+that and then add this as a layer in conf/bblayers.conf.
 
-  URI: git://git.openembedded.org/bitbake
-  branch: master
+Once you've done that you should be able to build the kernel module 
+like this:
 
-  URI: git://git.openembedded.org/openembedded-core
-  layers: meta
-  branch: master
+$bitbake st-lsm303d
 
-  URI: git://git.yoctoproject.org/xxxx
-  layers: xxxx
-  branch: master
+and you can include st-lsm303d in your recipes in the usual manner.
 
+Device Tree
+===========
 
-Patches
-=======
+Use:
 
-Please submit any patches against this BSP to the Yocto mailing list
-(yocto@yoctoproject.org) and cc: the maintainer:
+compatible = "st,lsm303d"; 
 
-Maintainer: XXX YYYYYY <xxx.yyyyyy@zzzzz.com>
+I have plans to modify this driver to support throwing interrupts from
+the lsm303d using these device tree fields:
 
-Please see the meta-xxxx/MAINTAINERS file for more details.
+/* UNSUPPORTED */
+st,sensors = "accelerometer","magnetometer";
+st,sensor-names = "lsm303d-acc","lsm303d-mag";
+st,drdy-gpios = <&gpio3 2 GPIO_ACTIVE_LOW>, <&gpio3 4 GPIO_ACTIVE_LOW>;
+st,drdy-int-pins = <1>,<2>;
 
-
-Table of Contents
-=================
-
-  I. Building the meta-scepter2 BSP layer
- II. Booting the images in /binary
+but I haven't done that work yet.
 
 
-I. Building the meta-scepter2 BSP layer
-========================================
-
---- replace with specific instructions for your layer ---
-
-In order to build an image with BSP support for a given release, you
-need to download the corresponding BSP tarball from the 'Board Support
-Package (BSP) Downloads' page of the Yocto Project website.
-
-Having done that, and assuming you extracted the BSP tarball contents
-at the top-level of your yocto build tree, you can build a
-scepter2 image by adding the location of the meta-scepter2
-layer to bblayers.conf, along with any other layers needed (to access
-common metadata shared between BSPs) e.g.:
-
-  yocto/meta-xxxx \
-  yocto/meta-xxxx/meta-scepter2 \
-
-To enable the scepter2 layer, add the scepter2 MACHINE to local.conf:
-
-  MACHINE ?= "scepter2"
-
-You should then be able to build a scepter2 image as such:
-
-  $ source oe-init-build-env
-  $ bitbake core-image-sato
-
-At the end of a successful build, you should have a live image that
-you can boot from a USB flash drive (see instructions on how to do
-that below, in the section 'Booting the images from /binary').
-
-As an alternative to downloading the BSP tarball, you can also work
-directly from the meta-xxxx git repository.  For each BSP in the
-'meta-xxxx' repository, there are multiple branches, one corresponding
-to each major release starting with 'laverne' (0.90), in addition to
-the latest code which tracks the current master (note that not all
-BSPs are present in every release).  Instead of extracting a BSP
-tarball at the top level of your yocto build tree, you can
-equivalently check out the appropriate branch from the meta-xxxx
-repository at the same location.
+Device tree fragments if it is helpful
 
 
-II. Booting the images in /binary
-=================================
+/* in your pinmuxes set up you i2c device and gpios that are connected to int1/2 (if any) */
 
---- replace with specific instructions for your platform ---
+	/* st lsm303 accelerometer-magnetometer */
+ 	lsm303d_i2c_pins_default: lsm303d_i2c_pins_default {
+ 		pinctrl-single,pins = <
+ 			0x154 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (B17) spi0_d0.I2C2_SCL */
+ 			0x150 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (A17) spi0_sclk.I2C2_SDA */
+ 			0x110 ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (J15) gmii1_rxer.gpio3[2] lsm303d INT1*/
+ 			0x118 ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (J17) gmii1_rxdv.gpio3[4] lsm303d INT2 */
+ 		>;
+ 	};
+ 
+ 	lsm303d_i2c_pins_sleep: lsm303d_i2c_pins_sleep {
+ 		pinctrl-single,pins = <
+ 			0x154 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (B17) spi0_d0.I2C2_SCL */
+ 			0x150 ( PIN_INPUT_PULLUP | MUX_MODE2 ) /* (A17) spi0_sclk.I2C2_SDA */
+ 			0x110 ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (J15) gmii1_rxer.gpio3[2] lsm303d INT1*/
+ 			0x118 ( PIN_INPUT_PULLUP | MUX_MODE7 ) /* (J17) gmii1_rxdv.gpio3[4] lsm303d INT2 */
+ 		>;
+ 	};
+ 
 
-This BSP contains bootable live images, which can be used to directly
-boot Yocto off of a USB flash drive.
+/* and then define the lsm303d as a subnode of your i2c bus */
 
-Under Linux, insert a USB flash drive.  Assuming the USB flash drive
-takes device /dev/sdf, use dd to copy the live image to it.  For
-example:
 
-# dd if=core-image-sato-scepter2-20101207053738.hddimg of=/dev/sdf
-# sync
-# eject /dev/sdf
-
-This should give you a bootable USB flash device.  Insert the device
-into a bootable USB socket on the target, and power on.  This should
-result in a system booted to the Sato graphical desktop.
-
-If you want a terminal, use the arrows at the top of the UI to move to
-different pages of available applications, one of which is named
-'Terminal'.  Clicking that should give you a root terminal.
-
-If you want to ssh into the system, you can use the root terminal to
-ifconfig the IP address and use that to ssh in.  The root password is
-empty, so to log in type 'root' for the user name and hit 'Enter' at
-the Password prompt: and you should be in.
-
-----
-
-If you find you're getting corrupt images on the USB (it doesn't show
-the syslinux boot: prompt, or the boot: prompt contains strange
-characters), try doing this first:
-
-# dd if=/dev/zero of=/dev/sdf bs=1M count=512
+&i2c2 {
+ 	pinctrl-names = "default","sleep";
+ 	pinctrl-0 = <&lsm303d_i2c_pins_default>;
+ 	pinctrl-1 = <&lsm303d_i2c_pins_sleep>;
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+ 
+ 
+ 	lsm303d: lsm303d@1e {
+ 		compatible = "st,lsm303d";
+ 		reg = <0x1e>;
+ 		status = "okay";
+ 		/* fields below are not used in the driver yet */
+ 		st,sensors = "accelerometer","magnetometer";
+ 		st,sensor-names = "lsm303d-acc","lsm303d-mag";
+ 		st,drdy-gpios = <&gpio3 2 GPIO_ACTIVE_LOW>, <&gpio3 4 GPIO_ACTIVE_LOW>;
+ 		st,drdy-int-pins = <1>,<2>;
+ 	};
+ 
+ };
