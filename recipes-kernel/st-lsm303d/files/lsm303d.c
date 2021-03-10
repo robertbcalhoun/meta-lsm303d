@@ -3361,7 +3361,7 @@ exit_check_functionality_failed:
 }
 
 
-static lsm303d_remove(struct i2c_client *client)
+static int lsm303d_remove(struct i2c_client *client)
 {
 	struct lsm303d_status *stat = i2c_get_clientdata(client);
 
