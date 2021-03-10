@@ -15,6 +15,11 @@ SRC_URI = "file://lsm303d.c \
            file://COPYING \
           "
 
+# this yocto kernel recipe is needed to build kernel module tool "modpost" in linux 5.4.
+# Backport it from meta/recipes-kernel if not present in your yocto branch.
+
+DEPENDS += " make-mod-scripts"
+
 S = "${WORKDIR}"
 
 # The inherit of module.bbclass will automatically name module packages with
